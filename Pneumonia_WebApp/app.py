@@ -1,41 +1,102 @@
+```python
+import os
 import streamlit as st
 import numpy as np
 from PIL import Image
 from tensorflow.keras.models import load_model
 
-# Load trained model
-model = load_model("pneumonia_detection_model.h5")
 
-# Title
-st.title("VisionTech")
-st.write("VGG16 Based Model for Pneumonia Prediction")
+# Load Model
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.path.join(BASE_DIR, "pneumonia_detection_model.h5")
+
+model = load_model(MODEL_PATH)
+
+
+# Page Configuration
+
+st.set_page_config(
+    page_title="VisionTech",
+    page_icon="🫁",
+    layout="centered"
+)
+
+
+# Header
+
+st.title("🫁 VisionTech")
+st.subheader("AI-Powered Pneumonia Detection")
+
+st.write(
+    "Upload a chest X-ray image and the trained VGG16 model "
+    "will predict whether Pneumonia is present."
+)
+
+st.divider()
+
 
 # Upload Image
-uploaded_file = st.file_uploader("Choose an X-ray Image to Processed...", type=["jpg", "jpeg", "png"])
+
+uploaded_file = st.file_uploader(
+    "Upload Chest X-ray Image",
+    type=["jpg", "jpeg", "png"]
+)
+
+
+# Prediction
 
 if uploaded_file is not None:
 
-    # Show uploaded image
     image = Image.open(uploaded_file)
-    st.image(image, caption="Uploaded X-ray Image", use_column_width=True)
 
-    # Preprocess image
-    img = image.resize((224, 224))
+    st.image(
+        image,
+        caption="Uploaded X-ray Image",
+        use_container_width=True
+    )
+
+    # Preprocessing
+
+    img = image.convert("RGB")
+    img = img.resize((224, 224))
+
     img_array = np.array(img) / 255.0
-
-    # Convert grayscale to RGB if needed
-    if img_array.shape[-1] != 3:
-        img_array = np.stack((img_array,)*3, axis=-1)
-
     img_array = np.expand_dims(img_array, axis=0)
 
-    # Prediction
-    prediction = model.predict(img_array)
+    # Model Prediction
 
-    # Output result
-    if prediction[0][0] > 0.5:
-        st.error("🛑 Prediction: PNEUMONIA Detected")
+    prediction = model.predict(img_array, verbose=0)
+
+    probability = float(prediction[0][0])
+
+    st.divider()
+
+    st.subheader("Prediction Result")
+
+    st.metric(
+        "Pneumonia Probability",
+        f"{probability * 100:.2f}%"
+    )
+
+    st.progress(probability)
+
+    # Result
+
+    if probability > 0.5:
+
+        st.error("🛑 Pneumonia Detected")
+
+        st.write(
+            "The uploaded X-ray shows patterns associated with pneumonia. "
+            "Please consult a qualified healthcare professional for diagnosis."
+        )
+
     else:
-        st.success("✅ Prediction: NORMAL")
 
-    st.write("Prediction Confidence:", prediction[0][0])
+        st.success("✅ Normal")
+
+        st.write(
+            "The uploaded X-ray does not show significant indicators of pneumonia."
+        )
+```
