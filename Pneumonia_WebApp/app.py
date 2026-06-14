@@ -1,4 +1,3 @@
-```python
 import os
 import streamlit as st
 import numpy as np
@@ -99,4 +98,3 @@ if uploaded_file is not None:
         st.write(
             "The uploaded X-ray does not show significant indicators of pneumonia."
         )
-```
